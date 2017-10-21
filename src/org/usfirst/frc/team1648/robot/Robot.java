@@ -29,7 +29,7 @@ public class Robot extends IterativeRobot {
 	Victor leftDrive2 = new Victor (0);
 	XBoxController controller = new XBoxController(0);
 	
-	PowerDistributionPanel pdp;
+	PowerDistributionPanel pdp = new PowerDistributionPanel(0);
 	
 	@Override
 	public void robotInit() {
@@ -70,6 +70,7 @@ public class Robot extends IterativeRobot {
 		System.out.println("Speed = " + climberMotor1.getSpeed());
 		System.out.println("A button: " + controller.getAButton());
 		System.out.println("Climber counter: " + climberCounter);
+		System.out.println("rightMotorCurrent = "+ pdp.getCurrent(15));
 	}
 	
 	public void arcadeDrive() {
