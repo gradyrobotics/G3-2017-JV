@@ -15,12 +15,13 @@ public class Robot extends IterativeRobot {
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
 	
-	Victor climberMotor = new Victor(3);
+	Victor climberMotor = new Victor(5);
 	Victor rightDrive3 = new Victor(1);
 	Victor rightDrive4 = new Victor(0);
-	Victor gearMekMotor = new Victor(5);
+	Victor gearMekMotor = new Victor(3);
 	Victor leftDrive1 = new Victor(4);
 	Victor leftDrive2 = new Victor (2);
+	int climberCounter = 0;
 	XBoxController controller = new XBoxController(0);
 	
 	@Override
@@ -36,6 +37,14 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		arcadeDrive();
+		if (controller.getAButton()){
+			if (climberCounter < 400) {
+				climberMotor.setSpeed(0.4);
+				climberCounter++;
+			}
+		}
+		System.out.println("A button: " + controller.getAButton());
+		System.out.println("Climber counter: " + climberCounter);
 	}
 	
 	public void arcadeDrive() {
