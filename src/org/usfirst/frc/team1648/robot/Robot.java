@@ -17,14 +17,15 @@ public class Robot extends IterativeRobot {
 	
 	boolean arcadeDrive = true;
 	int sleepCounter = 0;
-	
-	Victor climberMotor = new Victor(2); //correct
-	Victor rightDrive3 = new Victor(5); 
-	Victor rightDrive4 = new Victor(4); //correct
-	Victor gearMekMotor = new Victor(3); //labeled Victor1
-	Victor leftDrive1 = new Victor(1); //correct
-	Victor leftDrive2 = new Victor (0); //correct
 	int climberCounter = 0;
+	
+	Victor climberMotor1 = new Victor(3); //2
+	Victor climberMotor2 = new Victor (6); //not on bot yet
+	Victor rightDrive3 = new Victor(5); 
+	Victor rightDrive4 = new Victor(4); 
+	//Victor gearMekMotor = new Victor(3); // labeled Victor1
+	Victor leftDrive1 = new Victor(1); 
+	Victor leftDrive2 = new Victor (0);
 	XBoxController controller = new XBoxController(0);
 	
 	@Override
@@ -54,10 +55,16 @@ public class Robot extends IterativeRobot {
 		
 		if (controller.getAButton()){
 			if (climberCounter < 400) {
-				climberMotor.setSpeed(0.4);
+				climberMotor1.setSpeed(0.4);
 				climberCounter++;
+			} else {
+				climberMotor1.setSpeed(0);
 			}
+		} else {
+			climberMotor1.setSpeed(0);
 		}
+		
+		System.out.println("Speed = " + climberMotor1.getSpeed());
 		System.out.println("A button: " + controller.getAButton());
 		System.out.println("Climber counter: " + climberCounter);
 	}
