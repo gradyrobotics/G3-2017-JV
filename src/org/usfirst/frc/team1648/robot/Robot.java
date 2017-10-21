@@ -1,6 +1,7 @@
 package org.usfirst.frc.team1648.robot;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -27,6 +28,8 @@ public class Robot extends IterativeRobot {
 	Victor leftDrive1 = new Victor(1); 
 	Victor leftDrive2 = new Victor (0);
 	XBoxController controller = new XBoxController(0);
+	
+	PowerDistributionPanel pdp;
 	
 	@Override
 	public void robotInit() {
