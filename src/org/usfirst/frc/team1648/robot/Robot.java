@@ -1,6 +1,7 @@
 package org.usfirst.frc.team1648.robot;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -27,6 +28,8 @@ public class Robot extends IterativeRobot {
 	Victor leftDrive1 = new Victor(1); 
 	Victor leftDrive2 = new Victor (0);
 	XBoxController controller = new XBoxController(0);
+	
+	PowerDistributionPanel pdp = new PowerDistributionPanel(0);
 	
 	@Override
 	public void robotInit() {
@@ -67,6 +70,12 @@ public class Robot extends IterativeRobot {
 		System.out.println("Speed = " + climberMotor1.getSpeed());
 		System.out.println("A button: " + controller.getAButton());
 		System.out.println("Climber counter: " + climberCounter);
+		
+		for (int c = 0; c < 16; c++) {
+			if (pdp.getCurrent(c) > 0) {
+				System.out.println("Channel " + c + " = " + pdp.getCurrent(c));
+			}
+		}
 	}
 	
 	public void arcadeDrive() {
