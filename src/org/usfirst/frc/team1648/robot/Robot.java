@@ -70,7 +70,12 @@ public class Robot extends IterativeRobot {
 		System.out.println("Speed = " + climberMotor1.getSpeed());
 		System.out.println("A button: " + controller.getAButton());
 		System.out.println("Climber counter: " + climberCounter);
-		System.out.println("rightMotorCurrent = "+ pdp.getCurrent(15));
+		
+		for (int c = 0; c < 16; c++) {
+			if (pdp.getCurrent(c) > 0) {
+				System.out.println("Channel " + c + " = " + pdp.getCurrent(c));
+			}
+		}
 	}
 	
 	public void arcadeDrive() {
