@@ -11,76 +11,101 @@ public class Robot extends IterativeRobot {
 	final String defaultAuto = "Default";
 	final String customAuto = "My Auto";
 	
-	public static final double CONTROLLER_DEADZONE = 0.13; 
+	public static final double CONTROLLER_DEADZONE = 0.2;
+	public static final double GENTLE_DRIVE_OFFSET = 0.4;
+	public double autonSpeed = 0.0;
+	public static final double AUTON_SPEED_GROWTH = 0.02;
+	public static final double AUTON_MAX_SPEED = 0.4;
+	public static final int AUTON_MAX_LOOPS = 180;
+	public static final double CLIMBER_MOTOR_SPEED = 1.0;
+	public static final double GENTLE_CLIMB_OFFSET = 0.4;
+	public static final int GATEDROP_LOOPS = 20;
+	public static final double GEARMEK_MOTOR_SPEED = -0.3;
 	
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
 	
 	boolean arcadeDrive = true;
 	int sleepCounter = 0;
+	int autonCounter = 0;
 	int climberCounter = 0;
+	int gateDropCounter = 0;
 	
-	Victor climberMotor1 = new Victor(3); //2
-	Victor climberMotor2 = new Victor (6); //not on bot yet
-	Victor rightDrive3 = new Victor(5); 
-	Victor rightDrive4 = new Victor(4); 
-	//Victor gearMekMotor = new Victor(3); // labeled Victor1
-	Victor leftDrive1 = new Victor(1); 
-	Victor leftDrive2 = new Victor (0);
-	XBoxController controller = new XBoxController(0);
+	Victor rightDrive1 = new Victor(1); 
+	Victor rightDrive2 = new Victor (0);
+	Victor leftDrive3 = new Victor(5); 
+	Victor leftDrive4 = new Victor(4);
+	Victor climberMotor1 = new Victor(3);
+	Victor climberMotor2 = new Victor (6);
+	Victor gearMekMotor = new Victor(2); // labeled Victor1
 	
+	XBoxController driverController = new XBoxController(0); //port closest to front
+	XBoxController operatorController = new XBoxController(1);
 	PowerDistributionPanel pdp = new PowerDistributionPanel(0);
-	
+		
 	@Override
 	public void robotInit() {
-		
+	
 	}
 	
 	@Override
 	public void autonomousPeriodic() {
+		autonCenterGear();
 		
+		if (gateDropCounter < GATEDROP_LOOPS) {
+			gearMekMotor.setSpeed(GEARMEK_MOTOR_SPEED);
+			gateDropCounter++;
+		} else {
+			gearMekMotor.setSpeed(0.0);
+		}
+		
+		autonCounter++;
 	}
 	
 	@Override
 	public void teleopPeriodic() {
-		if (arcadeDrive) {
-			arcadeDrive();
+		autonReset();
+		arcadeDrive();
+		
+		//Arcade/tank switch
+//		if (sleepCounter > 0) {
+//			sleepCounter--;
+//		} else if (driverController.getYButton() && driverController.getBButton()) {
+//			arcadeDrive = !arcadeDrive;
+//			//sleepCounter prevents rapid toggling of drive state
+//			sleepCounter = 100;
+//		}
+		
+		if (operatorController.getAButton() && operatorController.getRightTrigger()) {
+			climberMotor1.setSpeed(CLIMBER_MOTOR_SPEED * GENTLE_CLIMB_OFFSET);
+			climberMotor2.setSpeed(CLIMBER_MOTOR_SPEED * GENTLE_CLIMB_OFFSET);
+		} else if (operatorController.getAButton()) {
+			climberMotor1.setSpeed(CLIMBER_MOTOR_SPEED);
+			climberMotor2.setSpeed(CLIMBER_MOTOR_SPEED);
 		} else {
-			tankDrive();
+			climberMotor1.setSpeed(0.0);
+			climberMotor2.setSpeed(0.0);
 		}
 		
-		if (sleepCounter > 0) {
-			sleepCounter--;
-		} else if (controller.getYButton()) {
-			arcadeDrive = !arcadeDrive;
-			sleepCounter = 100;
-		}
-		
-		if (controller.getAButton()){
-			if (climberCounter < 400) {
-				climberMotor1.setSpeed(0.4);
-				climberCounter++;
-			} else {
-				climberMotor1.setSpeed(0);
-			}
+		if (operatorController.getLeftTrigger() && operatorController.getXButton()) {
+			gearMekMotor.setSpeed(GEARMEK_MOTOR_SPEED);
+		} else if (operatorController.getRightTrigger() && operatorController.getXButton()) {
+			gearMekMotor.setSpeed(GEARMEK_MOTOR_SPEED * -1);
 		} else {
-			climberMotor1.setSpeed(0);
+			gearMekMotor.setSpeed(0);
 		}
-		
-		System.out.println("Speed = " + climberMotor1.getSpeed());
-		System.out.println("A button: " + controller.getAButton());
-		System.out.println("Climber counter: " + climberCounter);
-		
-		for (int c = 0; c < 16; c++) {
-			if (pdp.getCurrent(c) > 0) {
-				System.out.println("Channel " + c + " = " + pdp.getCurrent(c));
-			}
-		}
+				
+		//Print out any motors that are drawing current
+//		for (int c = 0; c < 16; c++) {
+//			if (pdp.getCurrent(c) > 0) {
+//				//System.out.println("Channel " + c + " = " + pdp.getCurrent(c));
+//			}
+//		}
 	}
 	
 	public void arcadeDrive() {
-		double leftYAxis = controller.getLeftYAxis();
-		double rightXAxis = controller.getRightXAxis();
+		double leftYAxis = driverController.getLeftYAxis();
+		double rightXAxis = driverController.getRightXAxis();
 		
 		if (Math.abs(leftYAxis) < CONTROLLER_DEADZONE) {
 			leftYAxis = 0;
@@ -93,27 +118,90 @@ public class Robot extends IterativeRobot {
 		double leftMotorSpeed = leftYAxis;
 		double rightMotorSpeed = leftYAxis;
 		
-		if (leftYAxis >= 0) {
-			leftMotorSpeed -= rightXAxis;
-			rightMotorSpeed += rightXAxis;
-		} else {
-			leftMotorSpeed += rightXAxis;
-			rightMotorSpeed -= rightXAxis;
-		}
+		rightXAxis *= 0.5;
+		
+		leftMotorSpeed -= rightXAxis;
+		rightMotorSpeed += rightXAxis;
+
 		
 		leftMotorSpeed = capAtOne(leftMotorSpeed);
 		rightMotorSpeed = capAtOne(rightMotorSpeed);
 		
-		//Todo remove temp code
-		leftMotorSpeed = leftMotorSpeed / 2;
-		rightMotorSpeed = rightMotorSpeed / 2;
+		leftMotorSpeed *= -1;
 		
-		leftMotorSpeed = -leftMotorSpeed; //left motor backwards
+		if (driverController.getRightTrigger()) {
+			leftMotorSpeed *= GENTLE_DRIVE_OFFSET;
+			rightMotorSpeed *= GENTLE_DRIVE_OFFSET;
+		}
 		
-		leftDrive1.setSpeed(leftMotorSpeed);
-		leftDrive2.setSpeed(leftMotorSpeed);
-		rightDrive3.setSpeed(rightMotorSpeed);
-		rightDrive4.setSpeed(rightMotorSpeed);		
+		rightDrive1.setSpeed(rightMotorSpeed);
+		rightDrive2.setSpeed(rightMotorSpeed);
+		leftDrive3.setSpeed(leftMotorSpeed);
+		leftDrive4.setSpeed(leftMotorSpeed);
+		
+		System.out.println("Right drive 1: " + rightMotorSpeed);
+		System.out.println("Left drive 2: " + leftMotorSpeed);
+	}
+		
+	public void tankDrive() {	
+		double rightYAxis = driverController.getRightYAxis(); 
+		double leftYAxis = driverController.getLeftYAxis(); 
+		if (Math.abs(leftYAxis) < CONTROLLER_DEADZONE) {
+			leftDrive3.setSpeed(0);
+			leftDrive4.setSpeed(0);
+		} else {
+			leftDrive3.setSpeed(leftYAxis);
+			leftDrive4.setSpeed(leftYAxis);
+		}
+		if (Math.abs(rightYAxis) < CONTROLLER_DEADZONE) {
+			rightDrive1.setSpeed(0);
+			rightDrive2.setSpeed(0);
+		} else {
+			rightDrive1.setSpeed(rightYAxis);
+			rightDrive2.setSpeed(rightYAxis);
+		}
+	}
+	
+	public void autonDriveStraight() {
+		double rightSpeed = 0.0;
+		double leftSpeed = 0.0;
+		
+		if (autonCounter <= AUTON_MAX_LOOPS) {
+			rightSpeed = 0.4;
+			leftSpeed = 0.4;
+		} else if (autonCounter > AUTON_MAX_LOOPS) {
+			rightSpeed = 0;
+			leftSpeed = 0;
+		}
+		
+		//Inverting motor
+		rightSpeed *= -1;
+		
+		leftDrive3.setSpeed(leftSpeed);
+		leftDrive4.setSpeed(leftSpeed);
+		rightDrive1.setSpeed(rightSpeed);
+		rightDrive2.setSpeed(rightSpeed);
+	}
+	
+	public void autonCenterGear() {
+		double rightSpeed = 0.0;
+		double leftSpeed = 0.0;
+		
+		if (autonCounter <= AUTON_MAX_LOOPS) {
+			rightSpeed = 0.4;
+			leftSpeed = 0.36;
+		} else if (autonCounter > AUTON_MAX_LOOPS) {
+			rightSpeed = 0;
+			leftSpeed = 0;
+		}
+		
+		//Inverting motor
+		rightSpeed *= -1;
+		
+		leftDrive3.setSpeed(leftSpeed);
+		leftDrive4.setSpeed(leftSpeed);
+		rightDrive1.setSpeed(rightSpeed);
+		rightDrive2.setSpeed(rightSpeed);
 	}
 	
 	public static double capAtOne(double x) {
@@ -125,24 +213,8 @@ public class Robot extends IterativeRobot {
 		return x;
 	}
 	
-	public void tankDrive() {	
-		double rightYAxis = controller.getRightYAxis(); 
-		double leftYAxis = controller.getLeftYAxis(); 
-		System.out.println("Right y = " + rightYAxis);
-		System.out.println("Left y = " + leftYAxis);
-		if (Math.abs(rightYAxis) < CONTROLLER_DEADZONE) {
-			rightDrive3.setSpeed(0);
-			rightDrive4.setSpeed(0);
-		} else {
-			rightDrive3.setSpeed(rightYAxis);
-			rightDrive4.setSpeed(rightYAxis);
-		}
-		if (Math.abs(leftYAxis) < CONTROLLER_DEADZONE) {
-			leftDrive1.setSpeed(0);
-			leftDrive2.setSpeed(0);
-		} else {
-			leftDrive1.setSpeed(leftYAxis * -1.0);
-			leftDrive2.setSpeed(leftYAxis * -1.0);
-		}
+	public void autonReset() {
+		gateDropCounter = 0;
+		autonCounter = 0;
 	}
 }
